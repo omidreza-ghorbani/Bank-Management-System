@@ -8,27 +8,15 @@
   ],
   "accounts": [
     {
-      "account_number": "ACC000003",
-      "customer_id": "CUST0001",
-      "balance": 0.0,
-      "transaction_history": []
-    },
-    {
-      "account_number": "ACC000002",
-      "customer_id": "CUST0001",
-      "balance": 0.0,
-      "transaction_history": []
-    },
-    {
       "account_number": "ACC000001",
       "customer_id": "CUST0001",
-      "balance": 1000.0,
+      "balance": 41.0,
       "transaction_history": [
         {
           "type": "\u0648\u0627\u0631\u06cc\u0632",
-          "amount": 1000.0,
+          "amount": 41.0,
           "description": "\u0648\u0627\u0631\u06cc\u0632 \u0646\u0642\u062f\u06cc",
-          "timestamp": "2025-05-22T22:13:10.794978"
+          "timestamp": "2025-05-23T01:12:41.398445"
         }
       ]
     }
