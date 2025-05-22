@@ -51,23 +51,6 @@ A modern banking system with a graphical user interface built using Python and T
 - Python 3.x
 - tkinter (usually comes with Python)
 
-## Installation
-
-1. Clone the repository:
-```bash
-git clone [repository-url]
-```
-
-2. Navigate to the project directory:
-```bash
-cd banking_project
-```
-
-3. Run the application:
-```bash
-python main.py
-```
-
 ## Usage
 
 1. **Registration**
@@ -119,10 +102,6 @@ The system includes comprehensive error handling for:
 3. Commit your changes
 4. Push to the branch
 5. Create a new Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Acknowledgments
 
