@@ -1,6 +1,7 @@
-# Modern Banking System
+# Bank-Management-System
 
-A modern banking system with a graphical user interface built using Python and Tkinter. This project implements a complete banking solution with user authentication, account management, and transaction processing.
+
+A Management system with a graphical user interface built using Python and Tkinter. This project implements a complete banking solution with user authentication, account management, and transaction processing.
 
 ## Features
 
