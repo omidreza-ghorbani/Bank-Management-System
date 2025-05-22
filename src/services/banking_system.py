@@ -2,15 +2,16 @@ import json
 import os
 import re
 from typing import List, Optional
-from data_structures import HashMap, LinkedQueue, MaxHeap, BalanceBST
-from models import Customer, BankAccount
+from src.core.data_structures import HashMap, LinkedQueue, MaxHeap, BalanceBST
+from src.core.models import Customer, BankAccount
+from src.core.constants import *
 
 class BankingSystem:
     def __init__(self):
         self.customers = HashMap()
         self.accounts = HashMap()
         self.current_customer: Optional[Customer] = None
-        self.data_file = 'bank_data.json'
+        self.data_file = DATA_FILE_PATH
         self.transaction_queue = LinkedQueue()
         self.priority_heap = MaxHeap()
         self.balance_bst = BalanceBST()
@@ -20,21 +21,21 @@ class BankingSystem:
         if os.path.exists(self.data_file):
             with open(self.data_file, 'r') as f:
                 data = json.load(f)
-                for customer_data in data.get('customers', []):
+                for customer_data in data.get(DATA_CUSTOMERS_KEY, []):
                     customer = Customer(
-                        customer_data['customer_id'],
-                        customer_data['name'],
-                        customer_data['password_hash'],
+                        customer_data[DATA_CUSTOMER_ID_KEY],
+                        customer_data[DATA_NAME_KEY],
+                        customer_data[DATA_PASSWORD_HASH_KEY],
                         is_hashed=True
                     )
                     self.customers.add(customer.customer_id, customer)
                 
-                for account_data in data.get('accounts', []):
+                for account_data in data.get(DATA_ACCOUNTS_KEY, []):
                     account = BankAccount(
-                        account_data['account_number'],
-                        account_data['customer_id']
+                        account_data[DATA_ACCOUNT_NUMBER_KEY],
+                        account_data[DATA_CUSTOMER_ID_KEY]
                     )
-                    account.balance = account_data['balance']
+                    account.balance = account_data[DATA_BALANCE_KEY]
                     self.accounts.add(account.account_number, account)
                     customer = self.customers.get(account.customer_id)
                     if customer:
@@ -48,9 +49,9 @@ class BankingSystem:
                 if item:
                     customer = item[1]
                     customers_data.append({
-                        'customer_id': customer.customer_id,
-                        'name': customer.name,
-                        'password_hash': customer.password_hash
+                        DATA_CUSTOMER_ID_KEY: customer.customer_id,
+                        DATA_NAME_KEY: customer.name,
+                        DATA_PASSWORD_HASH_KEY: customer.password_hash
                     })
         
         accounts_data = []
@@ -67,15 +68,15 @@ class BankingSystem:
                     account.transaction_history = temp_queue
                     
                     accounts_data.append({
-                        'account_number': account.account_number,
-                        'customer_id': account.customer_id,
-                        'balance': account.balance,
-                        'transaction_history': transaction_list
+                        DATA_ACCOUNT_NUMBER_KEY: account.account_number,
+                        DATA_CUSTOMER_ID_KEY: account.customer_id,
+                        DATA_BALANCE_KEY: account.balance,
+                        DATA_TRANSACTION_HISTORY_KEY: transaction_list
                     })
         
         data = {
-            'customers': customers_data,
-            'accounts': accounts_data
+            DATA_CUSTOMERS_KEY: customers_data,
+            DATA_ACCOUNTS_KEY: accounts_data
         }
         
         with open(self.data_file, 'w') as f:
@@ -83,20 +84,22 @@ class BankingSystem:
     
     def register_customer(self, name: str, password: str) -> str:
         if not self._validate_password(password):
-            return "رمز عبور باید حداقل 8 کاراکتر و شامل حروف و اعداد باشد"
+            return INVALID_PASSWORD
         
         customer_count = 0
         for bucket in self.customers.table:
             customer_count += len(bucket)
         
-        customer_id = f"CUST{customer_count + 1:04d}"
+        customer_id = CUSTOMER_ID_FORMAT.format(customer_count + 1)
         customer = Customer(customer_id, name, password)
         self.customers.add(customer_id, customer)
         self.save_data()
-        return f"ثبت نام با موفقیت انجام شد. شناسه مشتری شما: {customer_id}"
+        return REGISTER_SUCCESS.format(customer_id)
     
     def _validate_password(self, password: str) -> bool:
-        return len(password) >= 8 and bool(re.search(r'[A-Za-z]', password)) and bool(re.search(r'\d', password))
+        return len(password) >= MIN_PASSWORD_LENGTH and \
+               bool(re.search(r'[A-Za-z]', password)) and \
+               bool(re.search(r'\d', password))
     
     def login(self, customer_id: str, password: str) -> bool:
         customer = self.customers.get(customer_id)
@@ -107,19 +110,19 @@ class BankingSystem:
     
     def create_account(self) -> str:
         if not self.current_customer:
-            return "لطفا ابتدا وارد شوید"
+            return LOGIN_REQUIRED
         
         account_count = 0
         for bucket in self.accounts.table:
             account_count += len(bucket)
         
-        account_number = f"ACC{account_count + 1:06d}"
+        account_number = ACCOUNT_NUMBER_FORMAT.format(account_count + 1)
         account = BankAccount(account_number, self.current_customer.customer_id)
         self.accounts.add(account_number, account)
         self.current_customer.accounts.add(account_number, account)
         self.balance_bst.insert(account)
         self.save_data()
-        return f"حساب با موفقیت ایجاد شد. شماره حساب: {account_number}"
+        return ACCOUNT_CREATED.format(account_number)
     
     def process_transaction(self, transaction):
         if transaction.get('priority', False):
@@ -145,91 +148,104 @@ class BankingSystem:
             if from_acc.balance >= transaction['amount']:
                 from_acc.balance -= transaction['amount']
                 to_acc.balance += transaction['amount']
-                from_acc.add_transaction('انتقال خروج', -transaction['amount'], f"انتقال به {to_acc.account_number}")
-                to_acc.add_transaction('انتقال ورود', transaction['amount'], f"انتقال از {from_acc.account_number}")
+                from_acc.add_transaction(
+                    TRANSACTION_TYPES['TRANSFER_OUT'],
+                    -transaction['amount'],
+                    TRANSFER_TO_FORMAT.format(to_acc.account_number)
+                )
+                to_acc.add_transaction(
+                    TRANSACTION_TYPES['TRANSFER_IN'],
+                    transaction['amount'],
+                    TRANSFER_FROM_FORMAT.format(from_acc.account_number)
+                )
                 self.save_data()
     
     def deposit(self, account_number: str, amount: float) -> str:
         if not self.current_customer:
-            return "لطفا ابتدا وارد شوید"
+            return LOGIN_REQUIRED
         
         account = self.accounts.get(account_number)
         if not account:
-            return "حساب مورد نظر یافت نشد"
+            return ACCOUNT_NOT_FOUND
         
         if account.customer_id != self.current_customer.customer_id:
-            return "دسترسی غیرمجاز"
+            return UNAUTHORIZED_ACCESS
         
         if amount <= 0:
-            return "مبلغ باید مثبت باشد"
+            return INVALID_AMOUNT
         
         account.balance += amount
-        account.add_transaction('واریز', amount, "واریز نقدی")
+        account.add_transaction(TRANSACTION_TYPES['DEPOSIT'], amount, CASH_DEPOSIT)
         self.save_data()
-        return f"واریز با موفقیت انجام شد. موجودی جدید: {account.balance}"
+        return DEPOSIT_SUCCESS.format(account.balance)
     
     def withdraw(self, account_number: str, amount: float) -> str:
         if not self.current_customer:
-            return "لطفا ابتدا وارد شوید"
+            return LOGIN_REQUIRED
         
         account = self.accounts.get(account_number)
         if not account:
-            return "حساب مورد نظر یافت نشد"
+            return ACCOUNT_NOT_FOUND
         
         if account.customer_id != self.current_customer.customer_id:
-            return "دسترسی غیرمجاز"
+            return UNAUTHORIZED_ACCESS
         
         if amount <= 0:
-            return "مبلغ باید مثبت باشد"
+            return INVALID_AMOUNT
         
         if account.balance < amount:
-            return "موجودی کافی نیست"
+            return INSUFFICIENT_BALANCE
         
         account.balance -= amount
-        account.add_transaction('برداشت', -amount, "برداشت نقدی")
+        account.add_transaction(TRANSACTION_TYPES['WITHDRAW'], -amount, CASH_WITHDRAWAL)
         self.save_data()
-        return f"برداشت با موفقیت انجام شد. موجودی جدید: {account.balance}"
+        return WITHDRAW_SUCCESS.format(account.balance)
     
     def transfer(self, from_account: str, to_account: str, amount: float) -> str:
         transaction = {
             'from_account': from_account,
             'to_account': to_account,
             'amount': amount,
-            'priority': amount > 1000000
+            'priority': amount > PRIORITY_TRANSFER_AMOUNT
         }
         self.process_transaction(transaction)
         self.execute_transactions()
-        return f"انتقال با موفقیت انجام شد. مبلغ {amount} منتقل شد"
+        return TRANSFER_SUCCESS.format(amount)
     
     def get_account_balance(self, account_number: str) -> str:
         if not self.current_customer:
-            return "لطفا ابتدا وارد شوید"
+            return LOGIN_REQUIRED
         
         account = self.accounts.get(account_number)
         if not account:
-            return "حساب مورد نظر یافت نشد"
+            return ACCOUNT_NOT_FOUND
         
         if account.customer_id != self.current_customer.customer_id:
-            return "دسترسی غیرمجاز"
+            return UNAUTHORIZED_ACCESS
         
-        return f"موجودی حساب: {account.balance}"
+        return BALANCE_FORMAT.format(account.balance)
     
     def get_transaction_history(self, account_number: str) -> str:
         if not self.current_customer:
-            return "لطفا ابتدا وارد شوید"
+            return LOGIN_REQUIRED
         
         account = self.accounts.get(account_number)
         if not account:
-            return "حساب مورد نظر یافت نشد"
+            return ACCOUNT_NOT_FOUND
         
         if account.customer_id != self.current_customer.customer_id:
-            return "دسترسی غیرمجاز"
+            return UNAUTHORIZED_ACCESS
         
-        history = "تاریخچه تراکنش‌ها:\n"
+        history = TRANSACTION_HISTORY_TITLE + "\n"
         temp_queue = LinkedQueue()
         while not account.transaction_history.is_empty():
             trans = account.transaction_history.dequeue()
-            history += f"{trans['timestamp']} - {trans['type']}: {trans['amount']} - {trans['description']}\n"
+            history += TRANSACTION_FORMAT.format(
+                trans['timestamp'],
+                trans['type'],
+                trans['amount'],
+                trans['description']
+            ) + "\n"
             temp_queue.enqueue(trans)
         account.transaction_history = temp_queue
         return history

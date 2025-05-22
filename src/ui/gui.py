@@ -1,11 +1,12 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from banking_system import BankingSystem
+from src.services.banking_system import BankingSystem
+from src.core.constants import *
 
 class BankingApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("سیستم بانکداری مدرن")
+        self.root.title(APP_TITLE)
         self.root.geometry("800x600")
         self.bank = BankingSystem()
         
@@ -23,12 +24,12 @@ class BankingApp:
         welcome_frame = ttk.Frame(self.root, padding="20")
         welcome_frame.place(relx=0.5, rely=0.5, anchor="center")
         
-        ttk.Label(welcome_frame, text="به سیستم بانکداری مدرن خوش آمدید", 
+        ttk.Label(welcome_frame, text=WELCOME_MESSAGE, 
                  font=('Helvetica', 20, 'bold')).pack(pady=20)
         
-        ttk.Button(welcome_frame, text="ورود", 
+        ttk.Button(welcome_frame, text=LOGIN_BUTTON, 
                   command=self.show_login).pack(fill="x", pady=5)
-        ttk.Button(welcome_frame, text="ثبت نام", 
+        ttk.Button(welcome_frame, text=REGISTER_BUTTON, 
                   command=self.show_register).pack(fill="x", pady=5)
     
     def show_login(self):
@@ -37,14 +38,14 @@ class BankingApp:
         login_frame = ttk.Frame(self.root, padding="20")
         login_frame.place(relx=0.5, rely=0.5, anchor="center")
         
-        ttk.Label(login_frame, text="ورود به سیستم", 
+        ttk.Label(login_frame, text=LOGIN_TITLE, 
                  font=('Helvetica', 16, 'bold')).pack(pady=10)
         
-        ttk.Label(login_frame, text="شناسه مشتری:").pack()
+        ttk.Label(login_frame, text=CUSTOMER_ID_LABEL).pack()
         customer_id_entry = ttk.Entry(login_frame)
         customer_id_entry.pack(pady=5)
         
-        ttk.Label(login_frame, text="رمز عبور:").pack()
+        ttk.Label(login_frame, text=PASSWORD_LABEL).pack()
         password_entry = ttk.Entry(login_frame, show="*")
         password_entry.pack(pady=5)
         
@@ -54,11 +55,11 @@ class BankingApp:
             if self.bank.login(customer_id, password):
                 self.show_dashboard()
             else:
-                messagebox.showerror("خطا", "شناسه کاربری یا رمز عبور اشتباه است")
+                messagebox.showerror(ERROR_TITLE, LOGIN_ERROR)
         
-        ttk.Button(login_frame, text="ورود", 
+        ttk.Button(login_frame, text=LOGIN_BUTTON, 
                   command=do_login).pack(fill="x", pady=10)
-        ttk.Button(login_frame, text="بازگشت", 
+        ttk.Button(login_frame, text=BACK_BUTTON, 
                   command=self.setup_welcome_screen).pack(fill="x")
     
     def show_register(self):
@@ -67,14 +68,14 @@ class BankingApp:
         register_frame = ttk.Frame(self.root, padding="20")
         register_frame.place(relx=0.5, rely=0.5, anchor="center")
         
-        ttk.Label(register_frame, text="ثبت نام", 
+        ttk.Label(register_frame, text=REGISTER_TITLE, 
                  font=('Helvetica', 16, 'bold')).pack(pady=10)
         
-        ttk.Label(register_frame, text="نام:").pack()
+        ttk.Label(register_frame, text=NAME_LABEL).pack()
         name_entry = ttk.Entry(register_frame)
         name_entry.pack(pady=5)
         
-        ttk.Label(register_frame, text="رمز عبور:").pack()
+        ttk.Label(register_frame, text=PASSWORD_LABEL).pack()
         password_entry = ttk.Entry(register_frame, show="*")
         password_entry.pack(pady=5)
         
@@ -82,12 +83,12 @@ class BankingApp:
             name = name_entry.get()
             password = password_entry.get()
             result = self.bank.register_customer(name, password)
-            messagebox.showinfo("موفقیت", result)
+            messagebox.showinfo(SUCCESS_TITLE, result)
             self.show_login()
         
-        ttk.Button(register_frame, text="ثبت نام", 
+        ttk.Button(register_frame, text=REGISTER_BUTTON, 
                   command=do_register).pack(fill="x", pady=10)
-        ttk.Button(register_frame, text="بازگشت", 
+        ttk.Button(register_frame, text=BACK_BUTTON, 
                   command=self.setup_welcome_screen).pack(fill="x")
     
     def show_dashboard(self):
@@ -97,10 +98,10 @@ class BankingApp:
         header_frame.pack(fill="x", padx=20, pady=10)
         
         ttk.Label(header_frame, 
-                 text=f"خوش آمدید، {self.bank.current_customer.name}!",
+                 text=WELCOME_USER_FORMAT.format(self.bank.current_customer.name),
                  font=('Helvetica', 16, 'bold')).pack(side="left")
         
-        ttk.Button(header_frame, text="خروج", 
+        ttk.Button(header_frame, text=LOGOUT_BUTTON, 
                   command=self.logout).pack(side="right")
         
         content_frame = ttk.Frame(self.root, padding="20")
@@ -120,41 +121,43 @@ class BankingApp:
             account_frame.pack(fill="x", pady=5)
             
             ttk.Label(account_frame, 
-                     text=f"حساب: {account_number}").pack(side="left")
+                     text=ACCOUNT_INFO_FORMAT.format(account_number)).pack(side="left")
             ttk.Label(account_frame, 
-                     text=f"موجودی: {self.bank.accounts.get(account_number).balance:.2f} ریال").pack(side="right")
+                     text=BALANCE_INFO_FORMAT.format(
+                         self.bank.accounts.get(account_number).balance
+                     )).pack(side="right")
         
         actions_frame = ttk.Frame(content_frame)
         actions_frame.pack(fill="x", pady=20)
         
-        ttk.Button(actions_frame, text="ایجاد حساب جدید", 
+        ttk.Button(actions_frame, text=CREATE_ACCOUNT_BUTTON, 
                   command=self.create_account).pack(fill="x", pady=5)
-        ttk.Button(actions_frame, text="واریز", 
+        ttk.Button(actions_frame, text=DEPOSIT_BUTTON, 
                   command=self.show_deposit).pack(fill="x", pady=5)
-        ttk.Button(actions_frame, text="برداشت", 
+        ttk.Button(actions_frame, text=WITHDRAW_BUTTON, 
                   command=self.show_withdraw).pack(fill="x", pady=5)
-        ttk.Button(actions_frame, text="انتقال", 
+        ttk.Button(actions_frame, text=TRANSFER_BUTTON, 
                   command=self.show_transfer).pack(fill="x", pady=5)
-        ttk.Button(actions_frame, text="مشاهده تاریخچه تراکنش‌ها", 
+        ttk.Button(actions_frame, text=TRANSACTION_HISTORY_BUTTON, 
                   command=self.show_transaction_history).pack(fill="x", pady=5)
     
     def create_account(self):
         result = self.bank.create_account()
-        messagebox.showinfo("موفقیت", result)
+        messagebox.showinfo(SUCCESS_TITLE, result)
         self.show_dashboard()
     
     def show_deposit(self):
-        self.show_transaction_dialog("واریز", self.do_deposit)
+        self.show_transaction_dialog(DEPOSIT_BUTTON, self.do_deposit)
     
     def show_withdraw(self):
-        self.show_transaction_dialog("برداشت", self.do_withdraw)
+        self.show_transaction_dialog(WITHDRAW_BUTTON, self.do_withdraw)
     
     def show_transfer(self):
         dialog = tk.Toplevel(self.root)
-        dialog.title("انتقال وجه")
+        dialog.title(TRANSFER_TITLE)
         dialog.geometry("300x200")
         
-        ttk.Label(dialog, text="حساب مبدا:").pack(pady=5)
+        ttk.Label(dialog, text=FROM_ACCOUNT_LABEL).pack(pady=5)
         account_numbers = []
         for bucket in self.bank.current_customer.accounts.table:
             for item in bucket:
@@ -163,22 +166,22 @@ class BankingApp:
         from_account = ttk.Combobox(dialog, values=account_numbers)
         from_account.pack(pady=5)
         
-        ttk.Label(dialog, text="حساب مقصد:").pack(pady=5)
+        ttk.Label(dialog, text=TO_ACCOUNT_LABEL).pack(pady=5)
         to_account = ttk.Entry(dialog)
         to_account.pack(pady=5)
         
-        ttk.Label(dialog, text="مبلغ:").pack(pady=5)
+        ttk.Label(dialog, text=AMOUNT_LABEL).pack(pady=5)
         amount = ttk.Entry(dialog)
         amount.pack(pady=5)
         
         def do_transfer():
             result = self.bank.transfer(from_account.get(), to_account.get(), 
                                       float(amount.get()))
-            messagebox.showinfo("انتقال", result)
+            messagebox.showinfo(SUCCESS_TITLE, result)
             dialog.destroy()
             self.show_dashboard()
         
-        ttk.Button(dialog, text="انتقال", 
+        ttk.Button(dialog, text=TRANSFER_BUTTON, 
                   command=do_transfer).pack(pady=10)
     
     def show_transaction_dialog(self, title, callback):
@@ -186,7 +189,7 @@ class BankingApp:
         dialog.title(title)
         dialog.geometry("300x150")
         
-        ttk.Label(dialog, text="حساب:").pack(pady=5)
+        ttk.Label(dialog, text=ACCOUNT_LABEL).pack(pady=5)
         account_numbers = []
         for bucket in self.bank.current_customer.accounts.table:
             for item in bucket:
@@ -195,7 +198,7 @@ class BankingApp:
         account = ttk.Combobox(dialog, values=account_numbers)
         account.pack(pady=5)
         
-        ttk.Label(dialog, text="مبلغ:").pack(pady=5)
+        ttk.Label(dialog, text=AMOUNT_LABEL).pack(pady=5)
         amount = ttk.Entry(dialog)
         amount.pack(pady=5)
         
@@ -216,10 +219,10 @@ class BankingApp:
     
     def show_transaction_history(self):
         dialog = tk.Toplevel(self.root)
-        dialog.title("تاریخچه تراکنش‌ها")
+        dialog.title(TRANSACTION_HISTORY_TITLE)
         dialog.geometry("600x400")
         
-        ttk.Label(dialog, text="انتخاب حساب:").pack(pady=5)
+        ttk.Label(dialog, text=SELECT_ACCOUNT_LABEL).pack(pady=5)
         account_numbers = []
         for bucket in self.bank.current_customer.accounts.table:
             for item in bucket:
@@ -236,7 +239,7 @@ class BankingApp:
             history_text.delete(1.0, tk.END)
             history_text.insert(tk.END, history)
         
-        ttk.Button(dialog, text="نمایش تاریخچه", 
+        ttk.Button(dialog, text=SHOW_HISTORY_BUTTON, 
                   command=show_history).pack(pady=5)
     
     def logout(self):

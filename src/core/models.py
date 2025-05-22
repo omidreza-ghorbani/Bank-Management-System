@@ -1,6 +1,6 @@
 import hashlib
 from datetime import datetime
-from data_structures import HashMap, LinkedQueue
+from src.core.data_structures import HashMap, LinkedQueue
 
 class Customer:
     def __init__(self, customer_id: str, name: str, password: str, is_hashed=False):

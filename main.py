@@ -1,5 +1,5 @@
 import tkinter as tk
-from gui import BankingApp
+from src.ui.gui import BankingApp
 
 if __name__ == "__main__":
     root = tk.Tk()
